@@ -1,0 +1,41 @@
+services:
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: jay
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: news
+    ports:
+      - "5032:5432" # Maps host port 5032 to container port 5432
+
+  web:
+    build: .
+    command: celery -A app worker --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - db
+
+  celery:
+    build: .
+    command: celery -A app worker --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - db
+
+  beat:
+    build: .
+    command: celery -A app beat --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - db
